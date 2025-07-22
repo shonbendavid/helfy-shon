@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  tidb:
+    image: pingcap/tidb:v6.5.0
+    container_name: tidb
+    ports:
+      - "4000:4000"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "4000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    depends_on:
+      - tidb
+    environment:
+      - DB_HOST=tidb
+      - DB_USER=root
+      - DB_PASSWORD=
+      - DB_NAME=testdb
+      - JWT_SECRET=your-very-secure-secret
+    ports:
+      - "3001:3001"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka
+    environment:
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@localhost:9093
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  cdc-consumer:
+    build:
+      context: ./cdc-consumer
+      dockerfile: Dockerfile
+    container_name: cdc-consumer
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BROKER=kafka:9092
+      - KAFKA_TOPIC=tidb-cdc-topic
