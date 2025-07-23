@@ -19,6 +19,7 @@ If no `.env` file exists, it will be automatically created with default values w
 
 Default values:
 DB_HOST=tidb
+DB_PORT=4000
 DB_USER=root
 DB_PASSWORD=
 DB_NAME=testdb

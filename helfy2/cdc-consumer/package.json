@@ -1,0 +1,14 @@
+{
+    "name": "cdc-consumer",
+    "version": "1.0.0",
+    "main": "cdc-consumer.js",
+    "scripts": {
+        "start": "node create-topics.js && node cdc-consumer.js"
+    },
+    "dependencies": {
+      "kafkajs": "^2.2.4",
+      "log4js": "^6.9.1",
+      "mysql2": "^3.3.3",
+      "dotenv": "^16.3.1"
+    }
+  }
